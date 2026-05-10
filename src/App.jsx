@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import About from './components/About';
@@ -9,17 +9,14 @@ import Testimonials from './components/Testimonials';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import ScrollTop from './components/ScrollTop';
-import AdminPanel, { trackVisit, getVisitStats, getSettings } from './components/AdminPanel';
 
 function App() {
-  const [isAdmin, setIsAdmin] = useState(false);
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('portfolio-theme') || 'dark';
     }
     return 'dark';
   });
-  const [visitorCount, setVisitorCount] = useState(0);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -28,59 +25,12 @@ function App() {
 
   const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
-  // ===== SECRET KEY COMBO: Ctrl+Shift+A =====
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-        e.preventDefault();
-        setIsAdmin(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // Hash-based fallback — #admin
-  useEffect(() => {
-    const handleHash = () => {
-      if (window.location.hash === '#admin') {
-        setIsAdmin(true);
-      }
-    };
-    handleHash();
-    window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
-  }, []);
-
-  // ===== VISITOR TRACKING =====
-  useEffect(() => {
-    if (!isAdmin) {
-      trackVisit();
-    }
-  }, [isAdmin]);
-
-  // Update visitor count for Footer
-  useEffect(() => {
-    const updateCount = () => {
-      const stats = getVisitStats();
-      setVisitorCount(stats.total || 0);
-    };
-    updateCount();
-    const interval = setInterval(updateCount, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // ===== SPLASH INTRO =====
+  // Splash intro state
   const [introDone, setIntroDone] = useState(false);
   const [introPhase, setIntroPhase] = useState('idle');
 
   useEffect(() => {
-    if (isAdmin) {
-      setIntroDone(true);
-      setIntroPhase('done');
-      return;
-    }
-
+    // Refresh da doimo tepaga scroll va splash boshidan
     window.scrollTo(0, 0);
 
     setIntroPhase('assembling');
@@ -90,33 +40,17 @@ function App() {
       setIntroDone(true);
       setIntroPhase('done');
     }, 3200);
+    // Safety: 5 soniyadan keyin majburiy yopish
     const t4 = setTimeout(() => {
       setIntroDone(true);
       setIntroPhase('done');
     }, 5000);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
-  }, [isAdmin]);
-
-  // ===== ADMIN PANEL =====
-  const handleAdminBack = useCallback(() => {
-    setIsAdmin(false);
-    window.location.hash = '';
   }, []);
 
-  if (isAdmin) {
-    return (
-      <>
-        <AdminPanel onBack={handleAdminBack} />
-      </>
-    );
-  }
-
-  const settings = getSettings();
-
-  // ===== MAIN PORTFOLIO =====
   return (
     <>
-      {/* ===== SPLASH INTRO ===== */}
+      {/* ===== SPLASH INTRO - Navbar dan ustda ===== */}
       {!introDone && (
         <div className={`hero__splash ${introPhase}`}>
           <div className="hero__splash-bg">
@@ -213,7 +147,7 @@ function App() {
         <Testimonials />
         <Contact />
       </main>
-      <Footer visitorCount={visitorCount} showCounter={settings.showVisitorCounter} />
+      <Footer />
       <ScrollTop />
     </>
   );
